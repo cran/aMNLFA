@@ -1,11 +1,11 @@
-Mplus VERSION 7.2
+Mplus VERSION 8.3
 MUTHEN & MUTHEN
-03/26/2018   3:11 PM
+06/22/2021   4:28 PM
 
 INPUT INSTRUCTIONS
 
   TITLE: Scoring Model
-  DATA: FILE = "c:/Users/vcole/Dropbox/aMNLFA/MG aMNLFA testing/full.dat";
+  DATA: FILE = "full.dat";
   VARIABLE:
   NAMES = ID BIN_1 BIN_2 BIN_3 BIN_4 BIN_5 BIN_6 BIN_7 BIN_8 BIN_9 BIN_10 BIN_11
        BIN_12 AGE GENDER STUDY;
@@ -61,7 +61,7 @@ INPUT INSTRUCTIONS
   !
   !
   OUTPUT: tech1;
-  SAVEDATA: SAVE=FSCORES; FILE=scores.dat; format=free;
+  SAVEDATA: SAVE=FSCORES; FILE=scores.dat; format = f15.3;
 
 
 
@@ -127,7 +127,7 @@ Convergence criterion for H1                             0.100D-03
 Optimization algorithm                                         EMA
 Integration Specifications
   Type                                                  MONTECARLO
-  Number of integration points                                 100
+  Number of integration points                                1000
   Dimensions of numerical integration                            1
   Adaptive quadrature                                           ON
   Monte Carlo integration seed                                   0
@@ -135,13 +135,15 @@ Link                                                         LOGIT
 Cholesky                                                        ON
 
 Input data file(s)
-  c:/Users/vcole/Dropbox/aMNLFA/MG aMNLFA testing/full.dat
+  full.dat
 Input data format  FREE
 
 
 SUMMARY OF DATA
 
      Number of missing data patterns             1
+     Number of y missing data patterns           0
+     Number of u missing data patterns           1
 
 
 COVARIANCE COVERAGE OF DATA
@@ -152,42 +154,58 @@ Minimum covariance coverage value   0.100
 UNIVARIATE PROPORTIONS AND COUNTS FOR CATEGORICAL VARIABLES
 
     BIN_1
-      Category 1    0.634      317.000
-      Category 2    0.366      183.000
+      Category 1    0.634          317.000
+      Category 2    0.366          183.000
     BIN_2
-      Category 1    0.670      335.000
-      Category 2    0.330      165.000
+      Category 1    0.670          335.000
+      Category 2    0.330          165.000
     BIN_3
-      Category 1    0.638      319.000
-      Category 2    0.362      181.000
+      Category 1    0.638          319.000
+      Category 2    0.362          181.000
     BIN_4
-      Category 1    0.738      369.000
-      Category 2    0.262      131.000
+      Category 1    0.738          369.000
+      Category 2    0.262          131.000
     BIN_5
-      Category 1    0.740      370.000
-      Category 2    0.260      130.000
+      Category 1    0.740          370.000
+      Category 2    0.260          130.000
     BIN_6
-      Category 1    0.810      405.000
-      Category 2    0.190       95.000
+      Category 1    0.810          405.000
+      Category 2    0.190           95.000
     BIN_7
-      Category 1    0.588      294.000
-      Category 2    0.412      206.000
+      Category 1    0.588          294.000
+      Category 2    0.412          206.000
     BIN_8
-      Category 1    0.678      339.000
-      Category 2    0.322      161.000
+      Category 1    0.678          339.000
+      Category 2    0.322          161.000
     BIN_9
-      Category 1    0.698      349.000
-      Category 2    0.302      151.000
+      Category 1    0.698          349.000
+      Category 2    0.302          151.000
     BIN_10
-      Category 1    0.726      363.000
-      Category 2    0.274      137.000
+      Category 1    0.726          363.000
+      Category 2    0.274          137.000
     BIN_11
-      Category 1    0.758      379.000
-      Category 2    0.242      121.000
+      Category 1    0.758          379.000
+      Category 2    0.242          121.000
     BIN_12
-      Category 1    0.790      395.000
-      Category 2    0.210      105.000
+      Category 1    0.790          395.000
+      Category 2    0.210          105.000
 
+
+
+UNIVARIATE SAMPLE STATISTICS
+
+
+     UNIVARIATE HIGHER-ORDER MOMENT DESCRIPTIVE STATISTICS
+
+         Variable/         Mean/     Skewness/   Minimum/ % with                Percentiles
+        Sample Size      Variance    Kurtosis    Maximum  Min/Max      20%/60%    40%/80%    Median
+
+     AGE                  -0.302       0.223      -4.000    0.60%      -2.000     -1.000      0.000
+             500.000       2.183      -0.195       4.000    0.60%       0.000      1.000
+     STUDY                 0.000       0.000      -1.000   50.00%      -1.000     -1.000      0.000
+             500.000       1.000      -2.000       1.000   50.00%       1.000      1.000
+     GENDER                0.024      -0.048      -1.000   48.80%      -1.000     -1.000      1.000
+             500.000       0.999      -1.998       1.000   51.20%       1.000      1.000
 
 
 THE MODEL ESTIMATION TERMINATED NORMALLY
@@ -200,13 +218,13 @@ Number of Free Parameters                        0
 
 Loglikelihood
 
-          H0 Value                       -2746.018
+          H0 Value                       -2745.282
 
 Information Criteria
 
-          Akaike (AIC)                    5492.036
-          Bayesian (BIC)                  5492.036
-          Sample-Size Adjusted BIC        5492.036
+          Akaike (AIC)                    5490.564
+          Bayesian (BIC)                  5490.564
+          Sample-Size Adjusted BIC        5490.564
             (n* = (n + 2) / 24)
 
 
@@ -269,17 +287,20 @@ MODEL RESULTS
 
 LOGISTIC REGRESSION ODDS RATIO RESULTS
 
+                                         (Est. - 1) Two-Tailed
+                    Estimate       S.E.     / S.E.    P-Value
+
  BIN_2      ON
-    GENDER             0.358
-    STUDY              2.394
+    GENDER             0.358      0.000    999.000    999.000
+    STUDY              2.394      0.000    999.000    999.000
 
  BIN_3      ON
-    GENDER             2.743
-    STUDY              4.513
+    GENDER             2.743      0.000    999.000    999.000
+    STUDY              4.513      0.000    999.000    999.000
 
  BIN_5      ON
-    GENDER             0.276
-    STUDY              4.509
+    GENDER             0.276      0.000    999.000    999.000
+    STUDY              4.509      0.000    999.000    999.000
 
 
 QUALITY OF NUMERICAL RESULTS
@@ -297,37 +318,37 @@ TECHNICAL 1 OUTPUT
            TAU
               BIN_1$1       BIN_2$1       BIN_3$1       BIN_4$1       BIN_5$1
               ________      ________      ________      ________      ________
- 1                  0             0             0             0             0
+                    0             0             0             0             0
 
 
            TAU
               BIN_6$1       BIN_7$1       BIN_8$1       BIN_9$1       BIN_10$1
               ________      ________      ________      ________      ________
- 1                  0             0             0             0             0
+                    0             0             0             0             0
 
 
            TAU
               BIN_11$1      BIN_12$1
               ________      ________
- 1                  0             0
+                    0             0
 
 
            NU
               BIN_1         BIN_2         BIN_3         BIN_4         BIN_5
               ________      ________      ________      ________      ________
- 1                  0             0             0             0             0
+                    0             0             0             0             0
 
 
            NU
               BIN_6         BIN_7         BIN_8         BIN_9         BIN_10
               ________      ________      ________      ________      ________
- 1                  0             0             0             0             0
+                    0             0             0             0             0
 
 
            NU
               BIN_11        BIN_12        AGE           STUDY         GENDER
               ________      ________      ________      ________      ________
- 1                  0             0             0             0             0
+                    0             0             0             0             0
 
 
            LAMBDA
@@ -418,13 +439,13 @@ TECHNICAL 1 OUTPUT
            ALPHA
               ETA           BIN_2         BIN_3         BIN_5         AGE
               ________      ________      ________      ________      ________
- 1                  0             0             0             0             0
+                    0             0             0             0             0
 
 
            ALPHA
               STUDY         GENDER
               ________      ________
- 1                  0             0
+                    0             0
 
 
            BETA
@@ -476,37 +497,37 @@ TECHNICAL 1 OUTPUT
            TAU
               BIN_1$1       BIN_2$1       BIN_3$1       BIN_4$1       BIN_5$1
               ________      ________      ________      ________      ________
- 1              0.567         1.014         1.279         1.643         2.050
+                0.567         1.014         1.279         1.643         2.050
 
 
            TAU
               BIN_6$1       BIN_7$1       BIN_8$1       BIN_9$1       BIN_10$1
               ________      ________      ________      ________      ________
- 1              2.405         0.328         0.877         1.037         1.324
+                2.405         0.328         0.877         1.037         1.324
 
 
            TAU
               BIN_11$1      BIN_12$1
               ________      ________
- 1              1.836         2.312
+                1.836         2.312
 
 
            NU
               BIN_1         BIN_2         BIN_3         BIN_4         BIN_5
               ________      ________      ________      ________      ________
- 1              0.000         0.000         0.000         0.000         0.000
+                0.000         0.000         0.000         0.000         0.000
 
 
            NU
               BIN_6         BIN_7         BIN_8         BIN_9         BIN_10
               ________      ________      ________      ________      ________
- 1              0.000         0.000         0.000         0.000         0.000
+                0.000         0.000         0.000         0.000         0.000
 
 
            NU
               BIN_11        BIN_12        AGE           STUDY         GENDER
               ________      ________      ________      ________      ________
- 1              0.000         0.000         0.000         0.000         0.000
+                0.000         0.000         0.000         0.000         0.000
 
 
            LAMBDA
@@ -597,13 +618,13 @@ TECHNICAL 1 OUTPUT
            ALPHA
               ETA           BIN_2         BIN_3         BIN_5         AGE
               ________      ________      ________      ________      ________
- 1              0.000         0.000         0.000         0.000         0.000
+                0.000         0.000         0.000         0.000         0.000
 
 
            ALPHA
               STUDY         GENDER
               ________      ________
- 1              0.000         0.000
+                0.000         0.000
 
 
            BETA
@@ -658,21 +679,21 @@ SAMPLE STATISTICS FOR ESTIMATED FACTOR SCORES
            Means
               ETA           ETA_SE
               ________      ________
- 1             -0.116         0.517
+               -0.119         0.518
 
 
            Covariances
               ETA           ETA_SE
               ________      ________
- ETA            1.122
- ETA_SE        -0.106         0.017
+ ETA            1.129
+ ETA_SE        -0.107         0.017
 
 
            Correlations
               ETA           ETA_SE
               ________      ________
  ETA            1.000
- ETA_SE        -0.771         1.000
+ ETA_SE        -0.776         1.000
 
 
 SAVEDATA INFORMATION
@@ -681,28 +702,29 @@ SAVEDATA INFORMATION
   Save file
     scores.dat
 
-  Order of variables
+  Order and format of variables
 
-    BIN_1
-    BIN_2
-    BIN_3
-    BIN_4
-    BIN_5
-    BIN_6
-    BIN_7
-    BIN_8
-    BIN_9
-    BIN_10
-    BIN_11
-    BIN_12
-    AGE
-    STUDY
-    GENDER
-    ID
-    ETA
-    ETA_SE
+    BIN_1          F15.3
+    BIN_2          F15.3
+    BIN_3          F15.3
+    BIN_4          F15.3
+    BIN_5          F15.3
+    BIN_6          F15.3
+    BIN_7          F15.3
+    BIN_8          F15.3
+    BIN_9          F15.3
+    BIN_10         F15.3
+    BIN_11         F15.3
+    BIN_12         F15.3
+    AGE            F15.3
+    STUDY          F15.3
+    GENDER         F15.3
+    ID             F15.3
+    ETA            F15.3
+    ETA_SE         F15.3
 
-  Save file format           Free
+  Save file format
+    18F15.3
 
   Save file record length    10000
 
@@ -713,11 +735,11 @@ DIAGRAM INFORMATION
   If running Mplus from the Mplus Diagrammer, the diagram opens automatically.
 
   Diagram output
-    c:\users\vcole\dropbox\amnlfa_12212017\amnlfa\inst\examplefiles\scoring.dgm
+    c:\users\colev\dropbox\amnlfa_12212017\amnlfa_updated\amnlfa\inst\extdata\scoring.dgm
 
-     Beginning Time:  15:11:15
-        Ending Time:  15:11:16
-       Elapsed Time:  00:00:01
+     Beginning Time:  16:28:38
+        Ending Time:  16:28:50
+       Elapsed Time:  00:00:12
 
 
 
@@ -730,4 +752,4 @@ Fax: (310) 391-8971
 Web: www.StatModel.com
 Support: Support@StatModel.com
 
-Copyright (c) 1998-2014 Muthen & Muthen
+Copyright (c) 1998-2019 Muthen & Muthen

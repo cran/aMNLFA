@@ -4,10 +4,21 @@
 \alias{aMNLFA.object}
 \title{aMNLFA object function}
 \usage{
-aMNLFA.object(dir, mrdata, indicators = NULL, catindicators = NULL,
-  countindicators = NULL, meanimpact = NULL, varimpact = NULL,
-  measinvar = NULL, factors = NULL, time = NULL, auxiliary = NULL,
-  ID = NULL, thresholds = NULL)
+aMNLFA.object(
+  dir,
+  mrdata,
+  indicators = NULL,
+  catindicators = NULL,
+  countindicators = NULL,
+  meanimpact = NULL,
+  varimpact = NULL,
+  measinvar = NULL,
+  factors = NULL,
+  time = NULL,
+  auxiliary = NULL,
+  ID = NULL,
+  thresholds = NULL
+)
 }
 \arguments{
 \item{dir}{The directory in which data, inputs, and outputs are to be stored. Must be supplied.}
@@ -36,12 +47,15 @@ aMNLFA.object(dir, mrdata, indicators = NULL, catindicators = NULL,
 
 \item{thresholds}{A Boolean operator indicating whether to test for threshold DIF.}
 }
+\value{
+A object of type aMNLFA.object, which is a list of all the above arguments that can be passed to each aMNLFA function (except aMNLFA_DIFplot, which takes the output from aMNLFA.prune()).
+}
 \description{
 This function creates an aMNLFA object based on user specifications to pass to aMNLFA functions.
 }
 \examples{
  wd <- tempdir()
- first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
+ first<-paste0(system.file(package='aMNLFA'),"/extdata")
  the.list <- list.files(first,full.names=TRUE)
  file.copy(the.list,wd,overwrite=TRUE)
  

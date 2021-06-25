@@ -2,11 +2,12 @@
 #'
 #' This function generates the initial itemwise aMNLFA models.
 #' @param input.object The aMNLFA object (created using the aMNLFA.object function) which provides instructions for the function.
+#' @return No return value. Generates .INP files to test mean and variance impact, as well as DIF for all items, in \emph{Mplus}, in the directory specified in the aMNLFA.object. 
 #' @keywords MNLFA
 #' @export
 #' @examples
 #'  wd <- tempdir()
-#'  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
+#'  first<-paste0(system.file(package='aMNLFA'),"/extdata")
 #'  the.list <- list.files(first,full.names=TRUE)
 #'  file.copy(the.list,wd,overwrite=TRUE)
 #'  ob <- aMNLFA::aMNLFA.object(dir = wd, 
@@ -193,8 +194,12 @@ aMNLFA.initial<-function(input.object){
       #Perform threshold invariance testing
       ## Noninvariance with thresholds (intercepts below)
       mycontindicators <- myindicators[!(myindicators %in% mycatindicators)]
-      
-      allmi <- append(myindicators, myMeasInvar)
+      #As of 6/12/2021, allmi no longer contains MyMeasInvar
+      #Used to be:
+      #allmi <- append(myindicators, myMeasInvar)
+      #But now we don't put myMeasInvar in there because those variables are just in the cosntraints, and CONSTRAINTS can absorb it
+      #Results don't really change if you use CONSTRAINTS or put it in USEVARIABLES
+      allmi <- myindicators #So this is the new part
       USEMI <- append(USEVARIABLES, allmi)
       USEMI <- append(USEMI, semicolon)
       USEMI <- noquote(USEMI)
@@ -289,7 +294,9 @@ aMNLFA.initial<-function(input.object){
         
         
         # write.table(miinput,paste(dir,'/measinvarscript_',myindicators[w],'.inp',sep=''),append=F,row.names=FALSE,col.names=FALSE,quote=FALSE)
-        write.inp.file(miinput, fixPath(file.path(dir,"measinvarscript_", myindicators[w], ".inp", sep = "")))
+        #write.inp.file(miinput, fixPath(file.path(dir,"measinvarscript_", myindicators[w], ".inp", sep = "")))
+        write.inp.file(miinput, fixPath(file.path(dir,paste("measinvarscript_", myindicators[w], ".inp", sep = ""))))
+        
         message("COMPLETE. Check '", dir, "/' for Mplus inp file for measurement invariance model for ", myindicators[w], " (run this manually).")  
       }
     }
