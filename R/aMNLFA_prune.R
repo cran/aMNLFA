@@ -50,12 +50,23 @@ aMNLFA.prune<-function(input.object){
   myID = input.object$ID
   thresholds = input.object$thresholds
   
+  
+  if (thresholds == TRUE) {
+    stop("thresholds == TRUE is disabled in this version of aMNLFA. Reset thresholds to FALSE to run this function.")
+  }
+  
+  
   varlist<-c(myID,myauxiliary,myindicators,myMeasInvar,myMeanImpact,myVarImpact)
   varlist<-unique(varlist)
+  
+  #VC got rid of fixPath here - shouldn't be redefined within the function
+  #VC note: Ask IS why it was there - was it not working when loaded from the other f'n? 
   
   round2 <- MplusAutomation::readModels(fixPath(file.path(dir,"round2calibration.out",sep="")))
   round2estimates <- round2$parameters$unstandardized
   round2estimates$pexact <- 2*(1 - stats::pnorm(abs(round2estimates$est_se)))
+  
+
   
   #################################################################################################
   #################Use p<.1 criterion for impact###################################################
@@ -65,12 +76,21 @@ aMNLFA.prune<-function(input.object){
   ##Read in mean impact script and test for impact at p<.1
   meanimpact <- as.data.frame(round2estimates)
   meanimpact <- meanimpact[which(meanimpact$paramHeader=="ETA.ON"),]
+  meanimpact <- subset(meanimpact, meanimpact$pexact < .1) #VC added this on 8/13 to filter exclusively significant DIF
 
   varimpact <- as.data.frame(round2estimates)
   
   varimpact <- varimpact[which(varimpact$paramHeader=="New.Additional.Parameters" & varimpact$pval<.1),]  ######alpha <.1 to trim###########
   varimpact <- varimpact[grep("V", varimpact$param),] #Now subset it to just variance parameters -- i.e., eliminate lambdas
 
+  #Added in the following to get covariates associated with variance impact
+  #VC, 8/4/2021
+  v.names <- varimpact$param
+  varimpact.covariate.label <- sub(".*\\V", "", v.names)
+  varimpact.covariate.label <- as.numeric(varimpact.covariate.label)
+  varimpact$covariate.label <- varimpact.covariate.label
+  varimpact$covariate.name <- myVarImpact[varimpact$covariate.label]
+  
   
   ##lambda DIF
   lambdadif <- round2estimates

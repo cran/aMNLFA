@@ -40,6 +40,11 @@ aMNLFA.scores<-function(input.object){
   myID = input.object$ID
   thresholds = input.object$thresholds
   
+  if (thresholds == TRUE) {
+    stop("thresholds == TRUE is disabled in this version of aMNLFA. Reset thresholds to FALSE to run this function.")
+  }
+  
+  
   
   varlist<-c(myID,myauxiliary,myindicators,myMeasInvar,myMeanImpact,myVarImpact)
   varlist<-unique(varlist)
@@ -61,7 +66,7 @@ aMNLFA.scores<-function(input.object){
   COUNT<-append(COUNT,mycountindicators)
   COUNT<-noquote(append(COUNT,semicolon))
   COUNT<-utils::capture.output(cat(COUNT))
-  ANALYSIS<-noquote("ANALYSIS: ESTIMATOR=ML;ALGORITHM=INTEGRATION;INTEGRATION=MONTECARLO;PROCESSORS=4;")
+  ANALYSIS<-noquote("ANALYSIS: ESTIMATOR=ML; ALGORITHM=INTEGRATION; INTEGRATION=MONTECARLO; PROCESSORS=4;") #IS added spaces to accommodate new write.inp.file
   ETA<-paste("ETA BY ")
   l<-length(myindicators)
   loadings<-list()
@@ -84,6 +89,8 @@ aMNLFA.scores<-function(input.object){
   #############################################################################
   
   round3output<-MplusAutomation::readModels(fixPath(file.path(dir,"round3calibration.out",sep="")))
+  # round3output<-MplusAutomation::readModels(fixPath(file.path(substr(dir, 1, nchar(dir)-1),"round3calibration.out",sep=""))) #IS changed
+  
   round3input<-round3output$input$model.constraint
   
   keepvarimpact<-list()
@@ -94,7 +101,7 @@ aMNLFA.scores<-function(input.object){
   foo<-strsplit(as.character(keepvarimpact),"+",fixed=TRUE)
   foo<-strsplit(as.character(unlist(foo)),"*",fixed=TRUE)
   foo<-unlist(foo)
-  foo<-foo[!is.na(match(foo,myVarImpact))]
+  foo<-foo[!is.na(match(foo,myVarImpact))] #IS: this makes it NA
   keepvarimpact<-utils::capture.output(cat(foo))
   round3model <- round3output$input$model
   
@@ -107,8 +114,8 @@ aMNLFA.scores<-function(input.object){
   round3constraints <- round3constraints[(end.new+1):length(round3constraints)]
   
   round3output<-as.data.frame(round3output$parameters$unstandardized)
-
-    
+  
+  
   ETAPREDLIST<-round3output[which(round3output$paramHeader=="ETA.ON"),]
   
   
@@ -116,8 +123,19 @@ aMNLFA.scores<-function(input.object){
   lambdaconstraints<-constraints[which(substr(constraints$param,1,1)=="L"),]
   lambdaconstraints$itemnum<-substr(lambdaconstraints$param,2,2)
   lambdaconstraints$item<-myindicators[as.numeric(lambdaconstraints$itemnum)]
-  lambdaconstraints$predictornum<-substr(lambdaconstraints$param,3,4)
-  lambdaconstraints$predictor<-ifelse(lambdaconstraints$predictornum=="_0","intercept",myMeasInvar[as.numeric(sub("_","",lambdaconstraints$predictornum))])
+  #lambdaconstraints$predictornum<-substr(lambdaconstraints$param,3,4)
+  lambdaconstraints$predictornum<-stringi::stri_extract_last_regex(lambdaconstraints$param, "\\d{1}") #IS changed to index last digit (to accommodate different char lengths)
+  
+  #IS edited this section below to unscramble covariate assignment to lambda DIF
+  # lambdaconstraints$predictor<-ifelse(lambdaconstraints$predictornum=="_0","intercept",myMeasInvar[as.numeric(sub("_","",lambdaconstraints$predictornum))])
+  if (nrow(lambdaconstraints)>0){ #only if there is lambda DIF
+    lambdaconstraints$predictor=NA
+    lambdaconstraints$predictor=ifelse(lambdaconstraints$predictornum=="_0","intercept", lambdaconstraints$predictor)
+    for (q in 1:length(lambdaconstraints$predictornum)) {lambdaconstraints$predictor[q] <- ifelse(is.na(lambdaconstraints$predictor[q]),
+                                                                                                  myMeasInvar[as.numeric(sub("_","",lambdaconstraints$predictornum[q]))],
+                                                                                                  lambdaconstraints$predictor[q])} #added by IS, adapted from aMNLFA_simultaneous
+  }
+  
   
   lambdainvlist<-unique(unlist(lambdaconstraints$item))
   
@@ -173,7 +191,7 @@ aMNLFA.scores<-function(input.object){
   scoringinput[13,1]<-ifelse(length(mycatindicators)>0,CATEGORICAL,"!")
   scoringinput[14,1]<-ifelse(length(mycountindicators)>0,COUNT,"!")
   scoringinput[15,1]<-CONSTRAINT
-  scAN<-paste(ANALYSIS,"type=complex;",sep="")
+  scAN<-paste(ANALYSIS," type=complex;",sep="") #IS added space to accommodate new write.inp.file
   scoringinput[16,1]<-ifelse(is.null(mytime),ANALYSIS,scAN)
   scoringinput[17,1]<-varMODEL
   
@@ -198,7 +216,8 @@ aMNLFA.scores<-function(input.object){
   
   
   intdif<-round3output[grep(".ON",round3output$paramHeader),]
-  intdif<-intdif[which(intdif$item!="ETA"),]
+  # intdif<-intdif[which(intdif$item!="ETA"),]
+  intdif<-intdif[which(intdif$paramHeader!="ETA.ON"),] #IS edited to get intercept DIF
   
   intcode<-character(0)
   if (nrow(intdif)>0) {
@@ -237,15 +256,23 @@ aMNLFA.scores<-function(input.object){
   constraint.row <- 2
   constraint.replaced <- round3constraints
   
-  for (c in 1:length(round3constraints)) {
-    for (d in 1:nrow(constraints)) {
-      if (grepl(constraints$param[d], round3constraints[c], ignore.case = TRUE) == TRUE) {
-        constraint.replaced[c] <- sub(constraints$param[d], constraints$est[d], constraint.replaced[c], ignore.case = TRUE)
-        constraint.replaced[c] <- sub("\\+\\-", "\\-", constraint.replaced[c])
+  if (nrow(constraints)>0){ #added by IS to accommodate no constraints
+    for (c in 1:length(round3constraints)) {
+      for (d in 1:nrow(constraints)) {
+        if (grepl(constraints$param[d], round3constraints[c], ignore.case = TRUE) == TRUE) {
+          constraint.replaced[c] <- sub(constraints$param[d], constraints$est[d], constraint.replaced[c], ignore.case = TRUE)
+          constraint.replaced[c] <- sub("\\+\\-", "\\-", constraint.replaced[c])
         }
       }
-    constraint.section[constraint.row,1] <- constraint.replaced[c]
-    constraint.row <- constraint.row + 1
+      constraint.section[constraint.row,1] <- constraint.replaced[c]
+      constraint.row <- constraint.row + 1
+    }
+  } else { #added by IS to accommodate no constraints
+    for (c in 1:length(round3constraints)) {
+      constraint.section[constraint.row,1] <- constraint.replaced[c]
+      constraint.row <- constraint.row + 1
+    }
+    # constraint.section=constraint.section[1:3,] #added by IS to accommodate no constraints (removes excess stuff??)
   }
   
   scoringinput <- rbind(scoringinput, constraint.section)
@@ -257,4 +284,4 @@ aMNLFA.scores<-function(input.object){
   #utils::write.table(scoringinput,paste(dir,"/scoring.inp",sep=""),append=F,row.names=FALSE,col.names=FALSE,quote=FALSE)
   write.inp.file(scoringinput,fixPath(file.path(dir,"scoring.inp",sep="")))
   message("Check '", dir, "/' for Mplus inp file for scoring model (run this manually).")
-}
+  message("\n\nNOTE: The generated Mplus inputs are templates, which will likely need to be altered by the user. \nPlease read each inputm, alter it if necessary, and run it manually; similarly, please interpret all outputs manually. \n\nThis message will appear after all subsequent code-generating steps.")}

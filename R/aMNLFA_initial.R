@@ -1,13 +1,13 @@
 #' aMNLFA initial model fitting function
 #'
 #' This function generates the initial itemwise aMNLFA models.
+#' @name aMNLFA.initial
 #' @param input.object The aMNLFA object (created using the aMNLFA.object function) which provides instructions for the function.
-#' @return No return value. Generates .INP files to test mean and variance impact, as well as DIF for all items, in \emph{Mplus}, in the directory specified in the aMNLFA.object. 
 #' @keywords MNLFA
 #' @export
 #' @examples
 #'  wd <- tempdir()
-#'  first<-paste0(system.file(package='aMNLFA'),"/extdata")
+#'  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
 #'  the.list <- list.files(first,full.names=TRUE)
 #'  file.copy(the.list,wd,overwrite=TRUE)
 #'  ob <- aMNLFA::aMNLFA.object(dir = wd, 
@@ -23,8 +23,11 @@
 #'  
 #'  aMNLFA.initial(ob)
 #'  
+#'  
 
 aMNLFA.initial<-function(input.object){
+  
+
   
   dir = input.object$dir
   mrdata = input.object$mrdata
@@ -39,7 +42,11 @@ aMNLFA.initial<-function(input.object){
   myID = input.object$ID
   thresholds = input.object$thresholds
   
-  varlist<-c(myID,myauxiliary,myindicators,myMeasInvar,myMeanImpact,myVarImpact)
+  if (thresholds == TRUE) {
+    stop("thresholds == TRUE is disabled in this version of aMNLFA. Reset thresholds to FALSE to run this function.")
+  }
+  
+  varlist<-c(myID, myauxiliary, myindicators,myMeasInvar,myMeanImpact,myVarImpact)
   varlist<-unique(varlist)
   
   #Create input text
@@ -88,7 +95,8 @@ aMNLFA.initial<-function(input.object){
   
   meaninput<-as.data.frame(NULL)
   
-  header<-readLines(fixPath(file.path(dir,"header.txt")))
+  #header<-readLines(fixPath(file.path(dir,"header.txt")))
+  header<-readLines(file.path(dir,"header.txt"))
   
   meaninput[1,1]<-paste("TITLE: Mean Impact Model")
   meaninput[2,1]<-header[2]
@@ -111,31 +119,49 @@ aMNLFA.initial<-function(input.object){
   }
   meaninput[16+l,1]<-ETAON
   meaninput[17+l,1]<-tech1
-  
   #write.table(meaninput,file.path(dir,"meanimpactscript.inp",sep=""),append=F,row.names=FALSE,col.names=FALSE,quote=FALSE)
   #need to load the write.inp.file function (found in dropbox folder)
   write.inp.file(meaninput,fixPath(file.path(dir,"meanimpactscript.inp",sep="")))
   message("Check '", dir, "/' for Mplus inp file for mean impact model (run this manually)")
   
+
   
   ##Variance impact script
-  allvariance<-append(myindicators,myVarImpact)
-  USEVARImpact<-append(USEVARIABLES,allvariance)
-  USEVARImpact<-append(USEVARImpact,semicolon)
-  USEVARImpact<-noquote(USEVARImpact)
-  usevariance<-utils::capture.output(cat(USEVARImpact))
-  CONSTRAINT<-paste("CONSTRAINT=")
-  CONSTRAINT<-append(CONSTRAINT,myVarImpact)
-  CONSTRAINT<-append(CONSTRAINT,semicolon)
-  CONSTRAINT<-utils::capture.output(cat(CONSTRAINT))
+  if (length(myVarImpact) > 0) {
+    allvariance<-append(myindicators,myVarImpact)
+    USEVARImpact<-append(USEVARIABLES,allvariance)
+    USEVARImpact<-append(USEVARImpact,semicolon)
+    USEVARImpact<-noquote(USEVARImpact)
+    usevariance<-utils::capture.output(cat(USEVARImpact))
+    CONSTRAINT<-paste("CONSTRAINT=")
+    CONSTRAINT<-append(CONSTRAINT,myVarImpact)
+    CONSTRAINT<-append(CONSTRAINT,semicolon)
+    CONSTRAINT<-utils::capture.output(cat(CONSTRAINT))
+    MODELCONSTRAINT<-paste("MODEL CONSTRAINT: new(") #This was moved up here on 8/3
+  } else { 
+    #Adding this in to accommodate case of no variance impact
+    allvariance <- myindicators
+    USEVARImpact<-append(USEVARIABLES,allvariance)
+    USEVARImpact<-append(USEVARImpact,semicolon)
+    USEVARImpact<-noquote(USEVARImpact)
+    usevariance<-utils::capture.output(cat(USEVARImpact))
+    CONSTRAINT = "!"
+    MODELCONSTRAINT = "MODEL CONSTRAINT: "
+  }
+  
   varMODEL<-paste("MODEL: [ETA@0];ETA*(veta);")
   
-  ETAON2<-paste("ETA ON")
-  ETAON2<-append(ETAON2,myVarImpact)
+  if (length(myVarImpact > 0)) { 
+    #Adding in new condition to account for no variance impact
+    ETAON2<-paste("ETA ON")
+    ETAON2<-append(ETAON2,myVarImpact)
+  } else {
+    #Adding in new condition to account for no variance impact
+    ETAON2 <- "[ETA@0]"
+  }
   ETAON2<-noquote(append(ETAON2,semicolon))
   ETAON2<-utils::capture.output(cat(ETAON2))
   varMODELwETAON<-paste("MODEL: ",ETAON2," ETA*(veta);",sep="")
-  MODELCONSTRAINT<-paste("MODEL CONSTRAINT: new(")
   
   varinput<-as.data.frame(NULL)
   
@@ -156,21 +182,44 @@ aMNLFA.initial<-function(input.object){
   varinput[15,1]<-ANALYSIS
   varinput[16,1]<-varMODELwETAON
   l<-length(loadings)
+  #Let's set a counter variable just because it helps us deal with different number strings -- new as of 8/3
+  #We'll call it "var.counter" and we'll increment it every time we add a new line
+  #This looks unnatural in some places (i.e., outside a for loop), but it gets the job done
+  #-VTC, 8/3/2021
+  var.counter <- nrow(varinput) + 1
   for (i in 1:l){
-    varinput[16+i,1]<-loadings[i]
+    varinput[var.counter,1]<-loadings[i]
+    var.counter <- var.counter + 1
   }
-  varinput[17+l,1]<-MODELCONSTRAINT
+  varinput[var.counter,1]<-MODELCONSTRAINT
+  var.counter <- var.counter + 1
   v<-length(myVarImpact)
-  for (i in 1:v){
-    varinput[17+l+i,1]<-paste("v",i,"*0",sep="")
+  #Let's add in the following for no variance impact -- now conditional on length(myVarImpact) > 0
+  if (v > 0) {
+    for (i in 1:v){
+      varinput[var.counter,1]<-paste("v",i,"*0",sep="")
+      var.counter <- var.counter + 1
+    }
+  varinput[var.counter,1]<-paste(");")
+  var.counter <- var.counter + 1
+  varinput[var.counter,1]<-paste("veta=1*exp(")
+  var.counter <- var.counter + 1
+  #OK, so this needs to be (i in 1:v-1) because the last line after this does the vth covariate
+  #for (i in 1:(v-1)){ #This had been (i in 2:v-1) but it works now -- check why?
+    #VTC, 11/2/2021 -- OK, so we know why now: because the first element of this yields v0
+    #but it was causing messed up output when you only had one variance variable
+    if (v > 1)  {
+        for (i in 1:(v-1))  {
+        varinput[var.counter,1]<-paste("v",i,"*",myVarImpact[i],"+",sep="")
+        var.counter <- var.counter + 1
+      }
+    }
+  varinput[var.counter,1]<-paste("v",v,"*",myVarImpact[v],");",sep="")
+  } else {
+    varinput[var.counter, 1] <- "veta = 1;"
   }
-  varinput[18+l+v,1]<-paste(");")
-  varinput[19+l+v,1]<-paste("veta=1*exp(")
-  for (i in 1:v){ #This had been (i in 2:v-1) but it works now -- check why?
-    varinput[19+l+v+i,1]<-paste("v",i,"*",myVarImpact[i],"+",sep="")
-  }
-  varinput[19+l+v+v,1]<-paste("v",v,"*",myVarImpact[v],");",sep="")
-  varinput[20+l+v+v,1]<-tech1
+  var.counter <- var.counter + 1
+  varinput[var.counter,1]<-tech1
   
   
   #write.table(varinput,file.path(dir,"varimpactscript.inp",sep=""),append=F,row.names=FALSE,col.names=FALSE,quote=FALSE)
@@ -180,6 +229,11 @@ aMNLFA.initial<-function(input.object){
   
   
   # Creating Measurement invariance scripts
+  
+  #Preliminary step: have to make sure MODELCONSTRAINT contains "new( " even if it was omitted for null variance impact -- VTC, 8/5/2021
+  MODELCONSTRAINT<-paste("MODEL CONSTRAINT: new(") #This was moved up here on 8/3
+  
+  
   # First are a series of logical gates to make sure that the user has properly defined
   # their categorical indicators and if they want or do not want threshold DIF
   if (exists("mycatindicators")==FALSE) {
@@ -194,12 +248,8 @@ aMNLFA.initial<-function(input.object){
       #Perform threshold invariance testing
       ## Noninvariance with thresholds (intercepts below)
       mycontindicators <- myindicators[!(myindicators %in% mycatindicators)]
-      #As of 6/12/2021, allmi no longer contains MyMeasInvar
-      #Used to be:
-      #allmi <- append(myindicators, myMeasInvar)
-      #But now we don't put myMeasInvar in there because those variables are just in the cosntraints, and CONSTRAINTS can absorb it
-      #Results don't really change if you use CONSTRAINTS or put it in USEVARIABLES
-      allmi <- myindicators #So this is the new part
+      
+      allmi <- append(myindicators, myMeasInvar)
       USEMI <- append(USEVARIABLES, allmi)
       USEMI <- append(USEMI, semicolon)
       USEMI <- noquote(USEMI)
@@ -238,7 +288,9 @@ aMNLFA.initial<-function(input.object){
         }
         # Define the # of thresholds
         # Print the thresholds
-        th <-length(unique(mrdata[stats::complete.cases(mrdata), myindicators[w]]))-1
+        #th <-length(unique( mrdata[stats::complete.cases(mrdata), myindicators[w]] ))-1 RDS commented out temporarily for meriah
+        th  = length( unique(stats::na.omit(mrdata[, myindicators[w]])) )-1
+        
         for (i in seq(th)) {
           miinput[16 + l +i, 1] <- paste("[", myindicators[w], "$",i,
                                          "](T",i,");", sep = "" )
@@ -295,7 +347,7 @@ aMNLFA.initial<-function(input.object){
         
         # write.table(miinput,paste(dir,'/measinvarscript_',myindicators[w],'.inp',sep=''),append=F,row.names=FALSE,col.names=FALSE,quote=FALSE)
         #write.inp.file(miinput, fixPath(file.path(dir,"measinvarscript_", myindicators[w], ".inp", sep = "")))
-        write.inp.file(miinput, fixPath(file.path(dir,paste("measinvarscript_", myindicators[w], ".inp", sep = ""))))
+        write.inp.file(miinput, fixPath(file.path(dir, paste("measinvarscript_",myindicators[w], ".inp",sep=''), sep = "")))
         
         message("COMPLETE. Check '", dir, "/' for Mplus inp file for measurement invariance model for ", myindicators[w], " (run this manually).")  
       }
@@ -358,5 +410,5 @@ aMNLFA.initial<-function(input.object){
       message("COMPLETE. Check '", dir, "/' for Mplus inp file for measurement invariance model for ", myindicators[w], " (run this manually).")  
     }
   }
-  message("\nNOTE: After running these models, there may be some output from output that cannot be read in properly as a result of recent changes within Mplus. This will lead to errors in subsequent steps. \nAs a temporary fix the problem, please delete all output that comes after the 'LOGISTIC REGRESSION ODDS RATIO RESULTS' section after running your round 3 calibration, before proceeding to the next step. \nThis message will appear after all subsequent steps.")
+  message("\n\nNOTE: The generated Mplus inputs are templates, which will likely need to be altered by the user. \nPlease read each inputm, alter it if necessary, and run it manually; similarly, please interpret all outputs manually. \n\nThis message will appear after all subsequent code-generating steps.")
 }

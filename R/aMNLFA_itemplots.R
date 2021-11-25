@@ -2,12 +2,11 @@
 #'
 #' This function generates plots of item endorsement by time, and by each covariate. This is necessary for determining which covariates to use in the MNLFA.
 #' @param input.object The aMNLFA object (created using the aMNLFA.object function) which provides instructions for the function.
-#' @return No return value. Generates PNG files with each plot in the directory specified in the aMNLFA.object. 
 #' @keywords MNLFA
 #' @export
 #' @examples
 #'  wd <- tempdir()
-#'  first<-paste0(system.file(package='aMNLFA'),"/extdata")
+#'  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
 #'  the.list <- list.files(first,full.names=TRUE)
 #'  file.copy(the.list,wd,overwrite=TRUE)
 #'  ob <- aMNLFA::aMNLFA.object(dir = wd, 
@@ -43,7 +42,8 @@ aMNLFA.itemplots<-function(input.object){
   indlong$AvgItemResponse<-as.numeric(indlong$AvgItemResponse)
   if (!is.null(mytime)) indlong$time<-as.numeric(unlist(indlong[mytime]))
   if (!is.null(mytime)) indlong$time<-round(indlong$time,.1)
-  mrdata <- sort.data.frame(mrdata, by = "ID")
+  #Changed the following line to comply with CRAN checks -- it was complaining about using "order" 
+  mrdata<-plyr::arrange(mrdata,mrdata$ID)
   srdatacheck<-mrdata[!duplicated(mrdata[myID]),]
   N<-dim(srdatacheck)[1]
   min<-.01*N
@@ -93,7 +93,8 @@ aMNLFA.itemplots<-function(input.object){
       ic<-indlongmod$Moderator=="."|is.na(indlongmod$Moderator)|indlongmod$Moderator=="NA"
       cc_long<-indlongmod[which(ic=="FALSE"),]
       title<-paste(myindicators[j],"Responses Distribution by ",myfactors[i],sep="")
-      p<-with(cc_long,ggplot2::ggplot(cc_long,ggplot2::aes(factor(Moderator),value))) + with(cc_long,ggplot2::geom_boxplot()) + with(cc_long,ggplot2::theme_bw()) + with(cc_long,ggplot2::labs(title=title)) + with(cc_long,ggplot2::theme(legend.position="bottom"))
+      #For some reason the following line was coded as a boxplot; VC changed it on 10/4/2021
+      p<-with(cc_long,ggplot2::ggplot(cc_long,ggplot2::aes(y = value, x = factor(Moderator)))) + with(cc_long,ggplot2::geom_bar(stat = "identity")) + with(cc_long,ggplot2::theme_bw()) + with(cc_long,ggplot2::labs(title=title)) + with(cc_long,ggplot2::theme(legend.position="bottom"))
       filename<-fixPath(file.path(dir,paste(myindicators[j]," plots",myfactors[i],".png",sep="")))
       grDevices::png(filename=filename,
           units="in",

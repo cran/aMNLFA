@@ -5,6 +5,7 @@
 #' @param mchoice String representing the method of determining the number of tests, denoted m. Options include "actual", which uses the number of effects actually tested in the round 2 model as m, and "ibc", which uses the maximum number of all possible tests -- i.e., the number of items times the number of covariates. Defaults to "actual".
 #' @param method String representing the method of adjusting for multiple comparisons. Options include "bh", which invokes Benjamini-Hochberg correction with m defined using the mchoice parameter, and "bonferroni", which invokes a Bonferroni correction with m defined using the mchoice parameter.  Defaults to "bh".
 #' @param highest.category Boolean. If threshold DIF is tested, should only the category with the highest value of the test statistic be used when adjusting p. values? Defaults to TRUE, which corresponds to the results from "threshold.highest" in the aMNLFA.prune() step. If FALSE, all threshold effects will be considered, even those below the maximum value for a given item, which corresponds to the "thresholds.all" option in the aMNLFA.prune() step.
+#' @param keepmean Boolean. If intercept or loading DIF are present, should the corresponding mean impact effect be retained? Defaults to FALSE.
 #' @return No return value. Generates a file entitled "round3calibration.inp", to be run in \emph{Mplus}, in the directory specified in the aMNLFA.object. 
 #' @keywords MNLFA
 #' @export
@@ -28,8 +29,10 @@
 #'  aMNLFA.simultaneous(ob)
 
 
-aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highest.category = TRUE){
+aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highest.category = TRUE, keepmean = FALSE){
 
+  method <- base::toupper(method) #Put this in to accommodate people using lowercase "bh" on 10/7
+  
   dir = input.object$dir
   mrdata = input.object$mrdata
   myindicators = input.object$indicators
@@ -42,6 +45,13 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   myauxiliary = input.object$auxiliary
   myID = input.object$ID
   thresholds = input.object$thresholds
+  #keepmean is a new argument as of 8/18 -- can keep mean impact if corresponding loading or intercept DIF is present
+
+  
+  if (thresholds == TRUE) {
+    stop("thresholds == TRUE is disabled in this version of aMNLFA. Reset thresholds to FALSE to run this function.")
+  }
+  
 
   varlist <- c(myID,myauxiliary,myindicators,myMeasInvar,myMeanImpact,myVarImpact)
   varlist <- unique(varlist)
@@ -89,15 +99,23 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   intdif.mat.bon.actual <- matrix(0, length(myindicators), length(myMeasInvar))
   intdif.mat.bon.ibc <- matrix(0, length(myindicators), length(myMeasInvar))
   
-  lambdadif <- the.prune$`Summary of Effects`$`Loading DIF`
+  # lambdadif <- the.prune$`Summary of Effects`$`Loading DIF`
+  lambdadif <- the.prune$summary$loadingDIF #IS changed to match the.prune data structure....
+  
   if (thresholds == TRUE) {
     if (highest.category == TRUE) {
-      intdif <- the.prune$`Summary of Effects`$`Threshold DIF - Highest Category Used`
+      # intdif <- the.prune$`Summary of Effects`$`Threshold DIF - Highest Category Used`
+      intdif <- the.prune$summary$`Threshold DIF - Highest Category Used` #IS changed partially but this will likely not run as I have not set THRESHOLDS=TRUE and thus do not know the actual structure
+      
     } else {
-      intdif <- the.prune$`Summary of Effects`$`Threshold DIF - All Categories Used`
+      # intdif <- the.prune$`Summary of Effects`$`Threshold DIF - All Categories Used`
+      intdif <- the.prune$summary$`Threshold DIF - All Categories Used` #IS changed partially but this will likely not run as I have not set THRESHOLDS=TRUE and thus do not know the actual structure
+      
     }
   } else {
-    intdif <- the.prune$`Summary of Effects`$`Intercept DIF`
+    # intdif <- the.prune$`Summary of Effects`$`Intercept DIF`
+    intdif <- the.prune$summary$interceptDIF #IS changed to match the.prune data structure
+    
   }
   
   for (m in 1:length(myindicators)) {
@@ -134,6 +152,25 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   
   the.intdif[the.lambdadif == 1] <- 1 #Any covariate that has loading DIF needs to have intercept DIF too
   
+  #added by IS for sanity checking
+  #.GlobalEnv$the.intdif <- the.intdif
+  #.GlobalEnv$the.lambdadif <- the.lambdadif
+  #.GlobalEnv$myMeasInvar<-myMeasInvar
+  #.GlobalEnv$myindicators<-myindicators
+  lambda_dif_from_aMNLFA_final=the.lambdadif
+  colnames(lambda_dif_from_aMNLFA_final)=myMeasInvar
+  rownames(lambda_dif_from_aMNLFA_final)=myindicators
+  #VC replacing "homedir" with the working directory specified by the user
+  utils::write.csv(lambda_dif_from_aMNLFA_final, paste0(dir, "/lambda_dif_from_aMNLFA_final.csv")) #saves out lambda DIF
+  
+  intercept_dif_from_aMNLFA_final=the.intdif
+  colnames(intercept_dif_from_aMNLFA_final)=myMeasInvar
+  rownames(intercept_dif_from_aMNLFA_final)=myindicators
+  utils::write.csv(intercept_dif_from_aMNLFA_final, paste0(dir, "/intercept_dif_from_aMNLFA_final.csv")) #saves out lambda DIF
+  
+  
+  
+  
   ####Start writing input
   model.section <- data.frame(NULL)
   model.row <- 1
@@ -149,7 +186,9 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   ####Impact
   
   #Mean
-  mean.prune <- the.prune$`Summary of Effects`$`Mean Impact`
+  # mean.prune <- the.prune$`Summary of Effects`$`Mean Impact`
+  mean.prune <- the.prune$summary$meanimpact #IS changed to match the.prune data structure
+  
   mean.prune <- subset(mean.prune, mean.prune$pval < .05)
   
   for (a in 1:nrow(mean.prune)) {
@@ -158,7 +197,9 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   }
   
   #Variance
-  var.prune <- the.prune$`Summary of Effects`$`Variance Impact`
+  # var.prune <- the.prune$`Summary of Effects`$`Variance Impact`
+  var.prune <- the.prune$summary$varimpact #IS changed to match the.prune data structure
+  
   var.prune <- subset(var.prune, var.prune$pval < .05)
   
   varindices <- as.numeric(sub("V", "", var.prune$param))
@@ -184,7 +225,7 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   M <- length(myMeasInvar)
   ind <- length(myindicators)
   for (i in 1:ind){
-    predlist2 <- myMeasInvar[which(the.lambdadif[i,] == 1)]
+    predlist2 <- myMeasInvar[which(the.lambdadif[i,] == 1)] #list of covars with sig lambda DIF for each indicator
     predlist2 <- predlist2[!is.na(predlist2)]
     eq <- as.data.frame(NULL)
     start <- as.data.frame(NULL)
@@ -237,10 +278,25 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   any.intercept <- apply(the.intdif, 2, sum)
   uniqueint <- myMeasInvar[which(any.intercept > 0)]
   any.lambda <- apply(the.lambdadif, 2, sum)
-  uniquelambda <- myMeasInvar[which(any.intercept > 0)]
+  # uniquelambda <- myMeasInvar[which(any.intercept > 0)]
+  uniquelambda <- myMeasInvar[which(any.lambda > 0)] #IS changed to get unique LAMBDA
   
-  keepmeanimpact <- unique(the.prune$`Summary of Effects`$`Mean Impact`$param)
-  keepvarimpact <- unique(the.prune$`Summary of Effects`$`Mean Impact`$param)
+  
+  # keepmeanimpact <- unique(the.prune$`Summary of Effects`$`Mean Impact`$param)
+  #keepmeanimpact <- unique(the.prune$summary$meanimpact$param) #IS changed to reflect the.prune data structure
+  #keepmeanimpact <- unique(c(mean.prune$param, uniquelambda,uniqueint)) #IS changed again to pull only the mean impact for covariates that have sig mean impact OR sig lambda/int dif
+  
+  #VC changed after email conversations, 8/15-18, about including mean impact if corresponding DIF effect is there
+  if (keepmean == TRUE) {
+    keepmeanimpact <- unique(c(mean.prune$param, uniquelambda,uniqueint)) 
+  } else {
+    keepmeanimpact <- unique(c(mean.prune$param)) 
+    }
+  # keepvarimpact <- unique(the.prune$`Summary of Effects`$`Mean Impact`$param)
+  #keepvarimpact <- unique(the.prune$summary$meanimpact$param) #IS changed to reflect the.prune data structure
+ #keepvarimpact <- unique(the.prune$summary$varimpact$covariate.name) #IS changed again to reflect the.prune data structure
+ #keepvarimpact <- unique(var.prune$param) #IS changed again to pull only var impact with p<0.05
+  keepvarimpact <- unique(var.prune$covariate.name) #Changed on 10/7 by VTC; the thing we should be taking from var.prune is covariate.name, not param
   
   if (thresholds == FALSE) {
     usefinal <- utils::capture.output(cat(unique(c(myindicators, uniqueint, keepmeanimpact))))
@@ -306,5 +362,5 @@ aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highes
   
   #write.table(finalinput,file.path(dir,"finalcalibration.inp",sep=""),append=F,row.names=FALSE,col.names=FALSE,quote=FALSE)
   write.inp.file(finalinput,fixPath(file.path(dir,"round3calibration.inp",sep="")))
-  message("COMPLETE. Check '", dir, "/' for Mplus inp file for round 3 calibration model (run this manually). \nNOTE: After running  your model, there may be some output from output that cannot be read in properly as a result of recent changes within Mplus. This will lead to errors in subsequent steps. \nAs a temporary fix the problem, please delete all output that comes after the 'LOGISTIC REGRESSION ODDS RATIO RESULTS' section after running your round 3 calibration, before proceeding to the next step. \nThis message will appear after all subsequent steps.")  
+  message("COMPLETE. Check '", dir, "/' for Mplus inp file for round 3 calibration model (run this manually). \n\nNOTE: The generated Mplus inputs are templates, which will likely need to be altered by the user. \nPlease read each inputm, alter it if necessary, and run it manually; similarly, please interpret all outputs manually. \n\nThis message will appear after all subsequent code-generating steps.")
 }

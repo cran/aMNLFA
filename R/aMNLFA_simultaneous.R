@@ -2,6 +2,7 @@
 #'
 #' This function generates the simultaneous aMNLFA model from all the initial inputs.
 #' @param input.object The aMNLFA object (created using the aMNLFA.object function) which provides instructions for the function.
+#' @param keepmean Boolean. If intercept or loading DIF are present, should the corresponding mean impact effect be retained? Defaults to FALSE.
 #' @return No return value. Generates a file entitled "round3calibration.inp", to be run in \emph{Mplus}, in the directory specified in the aMNLFA.object. 
 #' @keywords MNLFA
 #' @export
@@ -25,7 +26,7 @@
 #'  aMNLFA.simultaneous(ob)
 
 
-aMNLFA.simultaneous <- function(input.object){
+aMNLFA.simultaneous <- function(input.object, keepmean = FALSE){
 
   dir = input.object$dir
   mrdata = input.object$mrdata
@@ -39,7 +40,12 @@ aMNLFA.simultaneous <- function(input.object){
   myauxiliary = input.object$auxiliary
   myID = input.object$ID
   thresholds = input.object$thresholds
-
+  #keepmean is a new argument as of 8/18 -- can keep mean impact if corresponding loading or intercept DIF is present
+  
+  if (thresholds == TRUE) {
+    stop("thresholds == TRUE is disabled in this version of aMNLFA. Reset thresholds to FALSE to run this function.")
+  }
+  
   varlist <- c(myID,myauxiliary,myindicators,myMeasInvar,myMeanImpact,myVarImpact)
   varlist <- unique(varlist)
 
@@ -104,15 +110,23 @@ aMNLFA.simultaneous <- function(input.object){
   varimpact <- noquote(substr(varimpact$param,2,3))
   myVarImpact2 <- as.data.frame(myVarImpact)
   myVarImpact3 <- as.data.frame(NULL)
-  for (i in 1:length(varimpact)){
-    myVarImpact3[i,1] <- myVarImpact2[varimpact[i],]
-  }
+
+  #if (!is.null(dim(varimpact))){ #added by IS to accommodate no var impact
+  if (length(varimpact) > 0) { #Changed by VC on 10/07 - because varimpact is a single number, not a dataframe, need to use length rather than dim
+    for (i in 1:length(varimpact)){
+      myVarImpact3[i,1] <- myVarImpact2[varimpact[i],]
+    }
+  
   keepvarimpact <- noquote(t(myVarImpact3))
 
   for (j in 1:length(keepvarimpact)){
     if(length(grep("_",keepvarimpact[j]))>0) keepvarimpact <- append(keepvarimpact,substr(keepvarimpact[j],1,3))
     if(length(grep("_",keepvarimpact[j]))>0) keepvarimpact <- append(keepvarimpact,substr(keepvarimpact[j],5,7))
   }
+  }else { #added by IS to accommodate no var impact
+    keepvarimpact=NULL
+  }
+  
   keepvarimpact <- keepvarimpact[which(keepvarimpact!=2)]
   keepvarimpact <- unique(keepvarimpact)
   threeletterlist <-  stringr::str_sub(myVarImpact,1,3)
@@ -137,19 +151,29 @@ aMNLFA.simultaneous <- function(input.object){
     lambdadif$param <- noquote(stringr::str_sub(lambdadif$param,-2,-1))
     lambdadif <- lambdadif[which(lambdadif$param!="00"),]
     #New as of 6/5
-    lambdadif$param <- noquote(stringr::str_sub(lambdadif$param,2,length(lambdadif$param)))
-    for (q in 1:length(lambdadif$param)) {lambdadif$param[q] <- myMeasInvar[as.numeric(lambdadif$param[q])]}
-    keep <- c("param","pval")
-    lambdadif <- noquote(t(lambdadif[keep]))
-    colnames(lambdadif)=lambdadif[1,]
-    lambdadif=t(as.matrix(lambdadif[-1,]))
+    #lambdadif$param <- noquote(stringr::str_sub(lambdadif$param,2,length(lambdadif$param))) 
+    lambdadif$param <- noquote(stringr::str_sub(lambdadif$param,2,nchar(lambdadif$param))) #VTC fix on 11/2 -- issue was that we were using length instead of nchar 
+    for (q in 1:length(lambdadif$param)) {
+      lambdadif$param[q] <- myMeasInvar[as.numeric(lambdadif$param[q])]
+      }
     lambda_min <- rep(NA,length(myMeasInvar))
-    for (v in 1:length(myMeasInvar)) {lambda_min[v] <- (as.numeric(min(subset(lambdadif,colnames(lambdadif)==myMeasInvar[v]))))}
+    #VTC fix on 11/2/2021
+    #lambdadif <- noquote(t(lambdadif[keep]))
+    #colnames(lambdadif)=lambdadif[1,]
+    #lambdadif=t(as.matrix(lambdadif[-1,])) #The "as.matrix" part was causing trouble because it deleted colnames
+    #the.names <- lambdadif[1,]
+    #lambdadif <- lambdadif[-1,]
+    #lambda_min <- rep(NA,length(myMeasInvar))
+    #for (v in 1:length(myMeasInvar)) {
+    #  lambda_min[v] <- (as.numeric(min(subset(lambdadif,colnames(lambdadif)==myMeasInvar[v]))))}
+    for (v in 1:length(myMeasInvar)) {
+      lambda_min[v] <- (as.numeric(min(subset(lambdadif$pval,lambdadif$param==myMeasInvar[v]))))
+      }
     #Fix indexing issue with threshold DIF
     lambda_index <- length(myMeasInvar) #Gets the number of covariates there are, regardless of whether we're using thresholds or not.
     alllambdadf[i,2:(lambda_index+1)] <- lambda_min
     for (j in 1:length(myMeasInvar)){
-      alllambdadf[i,j+1] <- ifelse(alllambdadf[i,j+1]<.05,myMeasInvar[j],NA)
+      alllambdadf[i,(j+1)] <- ifelse(alllambdadf[i,(j+1)]<.05,myMeasInvar[j],NA)
     }
     keeplambda <- unlist(as.list(alllambdadf[i,2:(lambda_index+1)]))
     keeplambda <- keeplambda[!is.na(keeplambda)]
@@ -197,7 +221,8 @@ aMNLFA.simultaneous <- function(input.object){
       for (j in 1:length(myMeasInvar)){ #now set the i,j^th value of the matrix to the name of the covariate if the corresponding p. value is < .05, NA otherwise
         allinterceptdf[i,j+1] <- ifelse(allinterceptdf[i,j+1]<.05,myMeasInvar[j],NA)
       }
-      keepintercept <- unlist(as.list(allinterceptdf[i,2:length(myMeasInvar)+1]))
+      #keepintercept <- unlist(as.list(allinterceptdf[i,2:length(myMeasInvar)+1]))
+      keepintercept <- unlist(as.list(allinterceptdf[i,2:(length(myMeasInvar)+1)])) #Fixed on 11/2 -- missed parenthesis was causing indexing issue
       keepintercept <- keepintercept[!is.na(keepintercept)]
       names(keepintercept) <- NULL
       for (j in 1:length(keepintercept)){
@@ -216,7 +241,7 @@ aMNLFA.simultaneous <- function(input.object){
       keepintercept2 <- keepintercept2[!is.na(keepintercept2)]
       keepintercept <- myMeasInvar[keepintercept2]
       if (length(keepintercept)>0)
-        for (j in 2:length(myMeasInvar)+1){
+        for (j in 2:(length(myMeasInvar)+1)){ #11/2 -- fixed issue with indexing caused by lack of parentheses :-|
           for (k in 1:length(keepintercept)){
             if(length(grep(keepintercept[k],myMeasInvar[j-1]))>0)  allinterceptdf[i,j] <- myMeasInvar[j-1]
           }
@@ -239,9 +264,9 @@ aMNLFA.simultaneous <- function(input.object){
       allinterceptdf[i,2:(how.many.thresholds+1)] <- thrdif #now add the p. values to allinterceptdf dataframe
       for (j in 1:length(myMeasInvar)){ #now set the i,j^th value of the matrix to the name of the covariate if ANY thresholds have p < .05, NA otherwise
         single.cov  <-  thrdif[grep(paste0("_",j),names(thrdif))]
-        allinterceptdf[i,j+1] <- ifelse(sum(single.cov<.05)>0,myMeasInvar[j],NA)
+        allinterceptdf[i,(j+1)] <- ifelse(sum(single.cov<.05)>0,myMeasInvar[j],NA) #11/2 - added parentheses in to fix indexing issue 
       }
-      keepintercept <- unlist(as.list(allinterceptdf[i,2:length(myMeasInvar)+1]))
+      keepintercept <- unlist(as.list(allinterceptdf[i,2:(length(myMeasInvar)+1)]))
       keepintercept <- keepintercept[!is.na(keepintercept)]
       names(keepintercept) <- NULL
       for (j in 1:length(keepintercept)){
@@ -260,7 +285,7 @@ aMNLFA.simultaneous <- function(input.object){
       keepintercept2 <- keepintercept2[!is.na(keepintercept2)]
       keepintercept <- myMeasInvar[keepintercept2]
       if (length(keepintercept)>0)
-        for (j in 2:length(myMeasInvar)+1){
+        for (j in 2:(length(myMeasInvar)+1)){
           for (k in 1:length(keepintercept)){
             if(length(grep(keepintercept[k],myMeasInvar[j-1]))>0)  allinterceptdf[i,j] <- myMeasInvar[j-1]
           }
@@ -290,12 +315,20 @@ aMNLFA.simultaneous <- function(input.object){
 
   intdiflist <- list()
   for (q in 1:length(myMeasInvar)) {
-    if ((myMeasInvar[q] %in% allinterceptdf[,q+1]) == TRUE) #If there was intercept DIF for covariate q, it will appear in the q+1 column
+    if ((myMeasInvar[q] %in% allinterceptdf[,(q+1)]) == TRUE) #If there was intercept DIF for covariate q, it will appear in the q+1 column
     {intdiflist <- c(intdiflist, myMeasInvar[q])}
   }
-  unlist(intdiflist)
+  intdiflist <- unlist(intdiflist) #VC changed this on 8/18
   
-  keepmeanimpact <- unique(append(keepmeanimpact,keepvarimpact))
+  #VC changed after email conversations, 8/15-18, about including mean impact if corresponding DIF effect is there
+  #Also, not sure why we were using "append" in here -- changed it to "c" because that can take multiple arguments
+  if (keepmean == TRUE) {
+    keepmeanimpact <- unique(c(keepmeanimpact, intdiflist, keeplambda, keepvarimpact))
+  } else {
+    keepmeanimpact <- unique(c(keepmeanimpact, keepvarimpact))
+  }
+  
+  
   
 
   
@@ -323,17 +356,19 @@ aMNLFA.simultaneous <- function(input.object){
   constraint.section[constraint.row,1] <- "veta=1*exp("
   if (length(keepvarimpact)>0)
     for (v in 1:length(keepvarimpact)){
-      constraint.section[constraint.row+1,1] <- paste("v",varindices[v],"*",keepvarimpact[v],"+",sep="")
+      constraint.section[(constraint.row+1),1] <- paste("v",varindices[v],"*",keepvarimpact[v],"+",sep="")
       constraint.row <- constraint.row + 1
     }
-  constraint.section[constraint.row+1,1] <- paste("0);")
+  constraint.section[(constraint.row+1),1] <- paste("0);")
   constraint.row <- constraint.row + 1
   
   
   m <- length(myMeasInvar)
   ind <- length(myindicators)
   for (i in 1:ind){
-    predlist2 <- unlist(alllambdadf[i,2:m+1])
+    # predlist2 <- unlist(alllambdadf[i,2:m+1])
+    # predlist2 <- unlist(alllambdadf[i,1:(m+1)]) #IS changed to 1:m+1....was omitting first column of lambda DIF before! :(
+    predlist2 <- unlist(alllambdadf[i,2:(m+1)]) #VTC changed -- issue wasn't that indexing started at wrong place but that the index needed to be inside parentheses. To see this, type "2:3+2" and "2:(3+2)" -- they give different results
     predlist2 <- predlist2[!is.na(predlist2)]
     eq <- as.data.frame(NULL)
     start <- as.data.frame(NULL)
@@ -342,17 +377,17 @@ aMNLFA.simultaneous <- function(input.object){
     if (length(predlist2)>0)
       predlist2indices <- which(myMeasInvar %in% predlist2) #6/15 -- Here too, like other parts, give the index that corresponds to its order in myMeasInvar 
     for (w in 1:length(predlist2)){
-      eq[1+w,1] <- ifelse(length(predlist2)>0,paste("+l",i,"_",predlist2indices[w],"*",predlist2[w],sep="") ,"!")
-      start[1+w,1] <- ifelse(length(predlist2)>0,paste(" l",i,"_",predlist2indices[w],"*0",sep="") ,"!")
+      eq[(1+w),1] <- ifelse(length(predlist2)>0,paste("+l",i,"_",predlist2indices[w],"*",predlist2[w],sep="") ,"!")
+      start[(1+w),1] <- ifelse(length(predlist2)>0,paste(" l",i,"_",predlist2indices[w],"*0",sep="") ,"!")
     }
-    constraint.section[constraint.row+1,1] <- paste(utils::capture.output(cat(noquote(unlist(eq)))),semicolon,sep="")
-    new.constraint.section[new.constraint.row+1,1] <- paste(utils::capture.output(cat(noquote(unlist(start)))),sep="")
+    constraint.section[(constraint.row+1),1] <- paste(utils::capture.output(cat(noquote(unlist(eq)))),semicolon,sep="")
+    new.constraint.section[(new.constraint.row+1),1] <- paste(utils::capture.output(cat(noquote(unlist(start)))),sep="")
     constraint.row <- nrow(constraint.section)
     new.constraint.row <- nrow(new.constraint.section)
   }
   
   if (thresholds == FALSE){
-    new.constraint.section[new.constraint.row+1,1] <- paste(");")
+    new.constraint.section[(new.constraint.row+1),1] <- paste(");")
   } else {
     for (i in 1:l) {
       th <-length(unique(mrdata[stats::complete.cases(mrdata), myindicators[l]]))-1
@@ -364,19 +399,19 @@ aMNLFA.simultaneous <- function(input.object){
         sig.covs.thr <- sig.covs.thr[is.na(sig.covs.thr) == FALSE]
         sig.covs.thr <- sig.covs.thr[2:length(sig.covs.thr)]
         for (k in 1:th) {
-          constraint.section[constraint.row + 1, 1] <- paste0("T",i,"_",k,"=")
-          constraint.section[constraint.row + 2, 1] <- paste0("T",i,"_",k,"_0 + ")
-          new.constraint.section[new.constraint.row + 1, 1] <- paste0("T",i,"_",k,"_0")
+          constraint.section[(constraint.row + 1), 1] <- paste0("T",i,"_",k,"=")
+          constraint.section[(constraint.row + 2), 1] <- paste0("T",i,"_",k,"_0 + ")
+          new.constraint.section[(new.constraint.row + 1), 1] <- paste0("T",i,"_",k,"_0")
           new.constraint.row <- nrow(new.constraint.section)
           for (q in 1:length(sig.covs.thr)) {
-            new.constraint.section[new.constraint.row + q, 1] <- paste0("T",i,"_",k,"_",cov.index[q])
-            constraint.section[constraint.row + q + 2, 1] <- paste0("T",i,"_",k,"_",cov.index[q], "*", sig.covs.thr[q], ifelse(q == length(sig.covs.thr), ";", "+"))
+            new.constraint.section[(new.constraint.row + q), 1] <- paste0("T",i,"_",k,"_",cov.index[q])
+            constraint.section[(constraint.row + q + 2), 1] <- paste0("T",i,"_",k,"_",cov.index[q], "*", sig.covs.thr[q], ifelse(q == length(sig.covs.thr), ";", "+"))
           }
           constraint.row <- nrow(constraint.section)
           new.constraint.row <- nrow(new.constraint.section)
         }
       }
-      new.constraint.section[new.constraint.row + 1,1] <- ");"
+      new.constraint.section[(new.constraint.row + 1),1] <- ");"
     }
   }
   
@@ -423,39 +458,42 @@ aMNLFA.simultaneous <- function(input.object){
   round2input[16,1] <- varMODEL
   l <- length(loadings)
   for (i in 1:l){
-    round2input[16+i,1] <- loadings[i]
+    round2input[(16+i),1] <- loadings[i]
   }
-  round2input[17+l,1] <- ifelse(length(keepmeanimpact)>0,utils::capture.output(cat(ETAON2)),"!")
+  round2input[(17+l),1] <- ifelse(length(keepmeanimpact)>0,utils::capture.output(cat(ETAON2)),"!")
 
   the.row <- nrow(round2input)
   
   if (thresholds == FALSE) {
     for (i in 1:l){
-      predlist <- unlist(allinterceptdf[i,2:l])
+      #predlist <- unlist(allinterceptdf[i,2:l])
+      #predlist <- unlist(allinterceptdf[i,1:(length(myMeasInvar)+1)])  #changed by IS to get all possible intercept DIF --should go thru length(myMeasInvar)+1
+      predlist <- unlist(allinterceptdf[i,2:(length(myMeasInvar)+1)])  #VC changed again -- should start at 2 because first element of predlist is a string
       predlist <- predlist[!is.na(predlist)]
       predlist <- utils::capture.output(cat(predlist))
-      round2input[the.row+i,1] <- ifelse(length(predlist)>0,paste(myindicators[i]," on ",predlist,";",sep=""),"!") #VC: check this
+      round2input[(the.row+i),1] <- ifelse(length(predlist)>0,paste(myindicators[i]," on ",predlist,";",sep=""),"!") #VC: check this
       the.row <- nrow(round2input)
     }
   } else {
-    for (i in 1:l) {
+    for (i in 1:l) { #IS not sure if this needs to be or what to do for this section when thresholds=TRUE?? 
       th <-length(unique(mrdata[stats::complete.cases(mrdata), myindicators[l]]))-1
       if (sum(is.na(allinterceptdf[i,])) > 0) {
         for (k in 1:th) {
-        round2input[the.row + 1,1] <- paste0("[",myindicators[i], "$", k, "](T", i, "_", k, ");")
-        the.row <- nrow(round2input)
+          round2input[(the.row + 1),1] <- paste0("[",myindicators[i], "$", k, "](T", i, "_", k, ");")
+          the.row <- nrow(round2input)
         }
       }
     }
   }
-
+  
   round2input <- rbind(round2input, new.constraint.section, constraint.section)
   the.row <- nrow(round2input)  
   
-  round2input[the.row + 1,1] <- tech1
+  round2input[(the.row + 1),1] <- tech1
 
 
   #write.table(round2input,file.path(dir,"round2calibration.inp",sep=""),append=F,row.names=FALSE,col.names=FALSE,quote=FALSE)
   write.inp.file(round2input,fixPath(file.path(dir,"round2calibration.inp",sep="")))
-  message("COMPLETE. Check '", dir, "/' for Mplus inp file for round 2 calibration model (run this manually). \nNOTE: After running  your round 2 calibration, there may be some output from output that cannot be read in properly as a result of recent changes within Mplus. This will lead to errors in subsequent steps. \nAs a temporary fix the problem, please delete all output that comes after the 'LOGISTIC REGRESSION ODDS RATIO RESULTS' section after running your round 3 calibration, before proceeding to the next step. \nThis message will appear after all subsequent steps.")  
+  message("COMPLETE. Check '", dir, "/' for Mplus inp file for round 2 calibration model (run this manually).")
+  message("\n\nNOTE: The generated Mplus inputs are templates, which will likely need to be altered by the user. \nPlease read each input, alter it if necessary, and run it manually; similarly, please interpret all outputs manually. \n\nThis message will appear after all subsequent code-generating steps.")
 }
