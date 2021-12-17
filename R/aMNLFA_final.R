@@ -10,6 +10,7 @@
 #' @keywords MNLFA
 #' @export
 #' @examples
+#'  \dontrun{
 #'  wd  <-  tempdir()
 #'  first <- paste0(system.file(package='aMNLFA'),"/extdata")
 #'  the.list  <-  list.files(first,full.names=TRUE)
@@ -27,6 +28,7 @@
 #'  thresholds = FALSE)
 #'  
 #'  aMNLFA.simultaneous(ob)
+#'  }
 
 
 aMNLFA.final <- function(input.object, mchoice = "actual", method = "BH", highest.category = TRUE, keepmean = FALSE){
