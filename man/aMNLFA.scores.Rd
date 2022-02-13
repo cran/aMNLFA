@@ -16,6 +16,8 @@ No return value. Generates an INP file to be run in \emph{Mplus} to generate sco
 This function creates scores generated using aMNLFA. Can only be run after the final model has been fit -- i.e., after the aMNLFA.final function.
 }
 \examples{
+
+ \dontrun{
  wd <- tempdir()
  first<-paste0(system.file(package='aMNLFA'),"/extdata")
  the.list <- list.files(first,full.names=TRUE)
@@ -33,5 +35,6 @@ This function creates scores generated using aMNLFA. Can only be run after the f
  thresholds = FALSE)
  
  aMNLFA.scores(ob)
+ }
 }
 \keyword{MNLFA}

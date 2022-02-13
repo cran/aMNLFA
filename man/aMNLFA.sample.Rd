@@ -16,6 +16,8 @@ No return value. Generates a calibration data file in the directory specified in
 This function generates a single-record dataset using a random sample of time points from the multiple-record sample.
 }
 \examples{
+
+ \dontrun{
  wd <- tempdir()
  first<-paste0(system.file(package='aMNLFA'),"/extdata")
  the.list <- list.files(first,full.names=TRUE)
@@ -33,5 +35,6 @@ This function generates a single-record dataset using a random sample of time po
  thresholds = FALSE)
  
  aMNLFA.sample(ob)
+ }
 }
 \keyword{MNLFA}

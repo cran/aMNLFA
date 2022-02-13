@@ -17,6 +17,8 @@
 #' @keywords MNLFA
 #' @export
 #' @examples
+#' 
+#'  \dontrun{
 #'  wd <- tempdir()
 #'  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
 #'  the.list <- list.files(first,full.names=TRUE)
@@ -32,6 +34,7 @@
 #'  factors = c("GENDER", "STUDY"),
 #'  ID = "ID",
 #'  thresholds = FALSE)
+#'  }
 #'  
 aMNLFA.object<-function(dir, mrdata, indicators=NULL, catindicators=NULL, countindicators=NULL, meanimpact=NULL, varimpact=NULL, measinvar=NULL, factors=NULL, time=NULL, auxiliary=NULL, ID=NULL, thresholds=NULL)
 {

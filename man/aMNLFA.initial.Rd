@@ -13,6 +13,8 @@ aMNLFA.initial(input.object)
 This function generates the initial itemwise aMNLFA models.
 }
 \examples{
+
+ \dontrun{
  wd <- tempdir()
  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
  the.list <- list.files(first,full.names=TRUE)
@@ -29,7 +31,7 @@ This function generates the initial itemwise aMNLFA models.
  thresholds = FALSE)
  
  aMNLFA.initial(ob)
- 
+ }
  
 }
 \keyword{MNLFA}

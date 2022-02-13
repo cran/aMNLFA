@@ -8,6 +8,7 @@
 #' @keywords MNLFA
 #' @export
 #' @examples
+#'  \dontrun{
 #'  wd <- tempdir()
 #'  first<-paste0(system.file(package='aMNLFA'),"/extdata")
 #'  the.list <- list.files(first,full.names=TRUE)
@@ -26,6 +27,7 @@
 #'  
 #'  prune.object <- aMNLFA.prune(ob)
 #'  aMNLFA.DIFplot(prune.object, "loading", log = FALSE)
+#'  }
 
 aMNLFA.DIFplot <- function(diflist, diftype, log = FALSE) {
 

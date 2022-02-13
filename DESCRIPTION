@@ -1,6 +1,6 @@
 Package: aMNLFA
 Title: Automated Moderated Nonlinear Factor Analysis Using 'M-plus'
-Version: 1.1.1
+Version: 1.1.2
 Authors@R: c(
   person("Veronica", "Cole", email = "colev@wfu.edu", role = c("aut","cre")),
   person("Nisha", "Gottfredson", email = "gottfredson@email.unc.edu", role = c("aut")),
@@ -18,7 +18,7 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-12-16 14:31:13 UTC; colev
+Packaged: 2022-01-13 22:54:48 UTC; colev
 Author: Veronica Cole [aut, cre],
   Nisha Gottfredson [aut],
   Michael Giordano [aut],
@@ -28,4 +28,4 @@ Author: Veronica Cole [aut, cre],
   Tim Janssen [ctb]
 Maintainer: Veronica Cole <colev@wfu.edu>
 Repository: CRAN
-Date/Publication: 2021-12-17 16:50:02 UTC
+Date/Publication: 2022-02-13 18:40:03 UTC

@@ -13,6 +13,7 @@ aMNLFA.itemplots(input.object)
 This function generates plots of item endorsement by time, and by each covariate. This is necessary for determining which covariates to use in the MNLFA.
 }
 \examples{
+\dontrun{
  wd <- tempdir()
  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
  the.list <- list.files(first,full.names=TRUE)
@@ -29,5 +30,6 @@ This function generates plots of item endorsement by time, and by each covariate
  thresholds = FALSE)
  
  aMNLFA.itemplots(ob)
+ }
 }
 \keyword{MNLFA}

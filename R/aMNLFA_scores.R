@@ -6,6 +6,8 @@
 #' @keywords MNLFA
 #' @export
 #' @examples
+#' 
+#'  \dontrun{
 #'  wd <- tempdir()
 #'  first<-paste0(system.file(package='aMNLFA'),"/extdata")
 #'  the.list <- list.files(first,full.names=TRUE)
@@ -23,6 +25,7 @@
 #'  thresholds = FALSE)
 #'  
 #'  aMNLFA.scores(ob)
+#'  }
 
 
 aMNLFA.scores<-function(input.object){

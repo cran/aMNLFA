@@ -51,6 +51,8 @@ aMNLFA.object(
 This function creates an aMNLFA object based on user specifications to pass to aMNLFA functions.
 }
 \examples{
+
+ \dontrun{
  wd <- tempdir()
  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
  the.list <- list.files(first,full.names=TRUE)
@@ -66,6 +68,7 @@ This function creates an aMNLFA object based on user specifications to pass to a
  factors = c("GENDER", "STUDY"),
  ID = "ID",
  thresholds = FALSE)
+ }
  
 }
 \keyword{MNLFA}

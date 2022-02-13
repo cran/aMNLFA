@@ -30,6 +30,7 @@ No return value. Generates a file entitled "round3calibration.inp", to be run in
 This function generates the simultaneous aMNLFA model from all the initial inputs.
 }
 \examples{
+ \dontrun{
  wd  <-  tempdir()
  first <- paste0(system.file(package='aMNLFA'),"/extdata")
  the.list  <-  list.files(first,full.names=TRUE)
@@ -47,5 +48,6 @@ This function generates the simultaneous aMNLFA model from all the initial input
  thresholds = FALSE)
  
  aMNLFA.simultaneous(ob)
+ }
 }
 \keyword{MNLFA}

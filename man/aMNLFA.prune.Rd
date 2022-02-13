@@ -26,6 +26,8 @@ A list (entitled summary) with the following elements:
 This function generates the simultaneous aMNLFA model from all the initial inputs.
 }
 \examples{
+
+ \dontrun{
  wd <- tempdir()
  first<-paste0(system.file(package='aMNLFA'),"/extdata")
  the.list <- list.files(first,full.names=TRUE)
@@ -43,5 +45,6 @@ This function generates the simultaneous aMNLFA model from all the initial input
  thresholds = FALSE)
  
  aMNLFA.prune(ob)
+ }
 }
 \keyword{MNLFA}

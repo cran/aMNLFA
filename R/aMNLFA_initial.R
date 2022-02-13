@@ -6,6 +6,8 @@
 #' @keywords MNLFA
 #' @export
 #' @examples
+#' 
+#'  \dontrun{
 #'  wd <- tempdir()
 #'  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
 #'  the.list <- list.files(first,full.names=TRUE)
@@ -22,7 +24,7 @@
 #'  thresholds = FALSE)
 #'  
 #'  aMNLFA.initial(ob)
-#'  
+#'  }
 #'  
 
 aMNLFA.initial<-function(input.object){

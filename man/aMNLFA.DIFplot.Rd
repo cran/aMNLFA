@@ -20,6 +20,7 @@ No return value; generates a plot using base R.
 This function gives the user a plot corresponding to loading, intercept, or threshold DIF from the aMNLFA.prune() function
 }
 \examples{
+ \dontrun{
  wd <- tempdir()
  first<-paste0(system.file(package='aMNLFA'),"/extdata")
  the.list <- list.files(first,full.names=TRUE)
@@ -38,5 +39,6 @@ This function gives the user a plot corresponding to loading, intercept, or thre
  
  prune.object <- aMNLFA.prune(ob)
  aMNLFA.DIFplot(prune.object, "loading", log = FALSE)
+ }
 }
 \keyword{MNLFA}

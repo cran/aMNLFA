@@ -16,6 +16,8 @@
 #' \item {tDIF_all} {If thresholds = TRUE in the corresponding aMNLFA.object: parameter values, standard errors, test statistics, and p. values for all threshold DIF effects tested in the simultaneous model, with tests performed on all categories for each item. Also includes critical values for different corrections according to the number of tests, \emph{m}: Benjamini-Hochberg or Bonferroni with \emph{m} defined as the actual number of tests included in the model (BH.actual and bon.actual, respectively); Benjamini-Hochberg or Bonferroni with \emph{m} defined as the number of items times the number of covariates (BH.ibc and bon.ibc, respectively).}  
 #' }
 #' @examples
+#' 
+#'  \dontrun{
 #'  wd <- tempdir()
 #'  first<-paste0(system.file(package='aMNLFA'),"/extdata")
 #'  the.list <- list.files(first,full.names=TRUE)
@@ -33,6 +35,7 @@
 #'  thresholds = FALSE)
 #'  
 #'  aMNLFA.prune(ob)
+#'  }
 
 
 aMNLFA.prune<-function(input.object){

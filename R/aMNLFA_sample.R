@@ -6,6 +6,8 @@
 #' @return No return value. Generates a calibration data file in the directory specified in the aMNLFA.object. 
 #' @export
 #' @examples
+#' 
+#'  \dontrun{
 #'  wd <- tempdir()
 #'  first<-paste0(system.file(package='aMNLFA'),"/extdata")
 #'  the.list <- list.files(first,full.names=TRUE)
@@ -23,6 +25,7 @@
 #'  thresholds = FALSE)
 #'  
 #'  aMNLFA.sample(ob)
+#'  }
 
 aMNLFA.sample<-function(input.object){
 

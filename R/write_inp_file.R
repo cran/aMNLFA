@@ -8,10 +8,12 @@
 #' @return outcharacter - string with slash at the end deleted
 #' @export
 #' @examples
+#' 
+#'  \dontrun{
 #'  wd <- tempdir()
-#'  first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
 #'  somestring <- as.data.frame("This is some text which would be written to an Mplus file.")
-#'  write.inp.file(somestring, first)
+#'  write.inp.file(somestring, wd)
+#'  }
 
 write.inp.file <- function(df, outfile) {
   #checking inputs

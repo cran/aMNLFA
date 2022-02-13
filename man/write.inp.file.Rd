@@ -18,9 +18,11 @@ outcharacter - string with slash at the end deleted
 This function generates the initial itemwise aMNLFA models.
 }
 \examples{
+
+ \dontrun{
  wd <- tempdir()
- first<-paste0(system.file(package='aMNLFA'),"/examplefiles")
  somestring <- as.data.frame("This is some text which would be written to an Mplus file.")
- write.inp.file(somestring, first)
+ write.inp.file(somestring, wd)
+ }
 }
 \keyword{MNLFA}
